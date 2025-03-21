@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Ticket - Sistema de Tickets</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="https://camaradesevilla.com/wp-content/uploads/2024/07/S00-logo-Grupo-Solutia-v01-1.png" alt="Logo del Sistema">
+            </div>
+            <div class="theme-toggle">
+                <button id="theme-button">Modo Oscuro</button>
+            </div>
+        </header>
+
+        <!-- Menú de Navegación -->
+        <nav class="navigation">
+            <ul>
+                <li><a href="#">Panel</a></li>
+                <li><a href="#">Mis Tickets</a></li>
+                <li><a href="#">Perfil</a></li>
+            </ul>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <div class="ticket-box">
+                <h1>Nuevo Ticket</h1>
+                <form class="ticket-form">
+                    <!-- Título -->
+                    <div class="form-group">
+                        <label for="title">Título:</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div class="form-group">
+                        <label for="category">Categoría:</label>
+                        <select id="category" name="category" required>
+                            <option value="">Seleccione una categoría</option>
+                            <option value="soporte">Soporte Técnico</option>
+                            <option value="facturacion">Facturación</option>
+                            <option value="ventas">Ventas</option>
+                        </select>
+                    </div>
+
+                    <!-- Prioridad -->
+                    <div class="form-group">
+                        <label for="priority">Prioridad:</label>
+                        <select id="priority" name="priority" required>
+                            <option value="">Seleccione una prioridad</option>
+                            <option value="baja">Baja</option>
+                            <option value="media">Media</option>
+                            <option value="alta">Alta</option>
+                        </select>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="form-group">
+                        <label for="description">Descripción:</label>
+                        <textarea id="description" name="description" rows="5" required></textarea>
+                    </div>
+
+                    <!-- Adjuntar Archivo -->
+                    <div class="form-group">
+                        <label for="file">Adjuntar archivo:</label>
+                        <input type="file" id="file" name="file">
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="form-buttons">
+                        <button type="button" class="cancel-button">Cancelar</button>
+                        <button type="submit" class="create-button">Crear Ticket</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script para cambiar entre modo oscuro y modo claro -->
+    <script>
+        const themeButton = document.getElementById('theme-button');
+        const body = document.body;
+
+        themeButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                themeButton.textContent = 'Modo Claro';
+            } else {
+                themeButton.textContent = 'Modo Oscuro';
+            }
+        });
+    </script>
+</body>
+</html>
