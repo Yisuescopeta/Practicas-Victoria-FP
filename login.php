@@ -1,8 +1,6 @@
 <?php
 session_start();
 
-session_start();
-
 // Configuración de la base de datos
 $host = 'localhost';
 $dbname = 'ticket_system';
