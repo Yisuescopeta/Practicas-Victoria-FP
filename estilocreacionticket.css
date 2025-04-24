@@ -87,3 +87,15 @@ body.dark-mode .navbar .nav-link {
 body.dark-mode .navbar .nav-link:hover {
     color: #2980b9 !important;
 }
+
+/* Añade esto al final del archivo estilocreacionticket.css */
+body.dark-mode .input-group-text {
+    color: #ff8c42 !important;
+    background-color: rgba(255, 140, 66, 0.1) !important;
+}
+
+body.dark-mode .fa-user,
+body.dark-mode .fa-lock,
+body.dark-mode .fa-envelope {
+    color: #ff8c42 !important;
+}

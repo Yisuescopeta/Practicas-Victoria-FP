@@ -118,7 +118,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background: #333;
             color: var(--color-primary);
         }
-        
+
+        /* Añade esto al final del archivo estilocreacionticket.css */
+body.dark-mode .input-group-text {
+    color: #ff8c42 !important;
+    background-color: rgba(255, 140, 66, 0.1) !important;
+}
+
+body.dark-mode .fa-user,
+body.dark-mode .fa-lock,
+body.dark-mode .fa-envelope {
+    color: #ff8c42 !important;
+}
+/* Añade esto también en estilologin.css ya que comparten el mismo CSS */
+body.dark-mode .btn-register {
+    background-color: #ff8c42 !important;
+    border-color: #ff8c42 !important;
+}
+
+body.dark-mode .btn-register:hover {
+    background-color: #e67e22 !important;
+    border-color: #e67e22 !important;
+}
+body.dark-mode .text-decoration-none {
+    color: #ff8c42 !important;
+}
+
+body.dark-mode .text-decoration-none:hover {
+    color: #e67e22 !important;
+    text-decoration: underline !important;
+}
+
+/* En estilologin.css */
+body.dark-mode .text-decoration-none {
+    color: #ff8c42 !important;
+}
+
+body.dark-mode .text-decoration-none:hover {
+    color: #e67e22 !important;
+    text-decoration: underline !important;
+}
     </style>
 </head>
 <body class="bg-light">

@@ -138,6 +138,68 @@ if (isset($_SESSION['user_id'])) {
             background: #333;
             color: var(--color-orange);
         }
+
+        /* Añade esto al final del archivo estilocreacionticket.css */
+        body.dark-mode .input-group-text {
+    color: #ff8c42 !important;
+    background-color: rgba(255, 140, 66, 0.1) !important;
+}
+
+body.dark-mode .fa-user,
+body.dark-mode .fa-lock,
+body.dark-mode .fa-envelope {
+    color: #ff8c42 !important;
+}
+/* Añade esto también en estilologin.css ya que comparten el mismo CSS */
+body.dark-mode .btn-register {
+    background-color: #ff8c42 !important;
+    border-color: #ff8c42 !important;
+}
+
+body.dark-mode .btn-register:hover {
+    background-color: #e67e22 !important;
+    border-color: #e67e22 !important;
+}
+body.dark-mode .text-decoration-none {
+    color: #ff8c42 !important;
+}
+
+body.dark-mode .text-decoration-none:hover {
+    color: #e67e22 !important;
+    text-decoration: underline !important;
+}
+/* Añade esto al final del archivo estilologin.css */
+body.dark-mode .header {
+    border-bottom-color: #ff8c42 !important; /* Línea superior naranja */
+}
+
+body.dark-mode .btn-login {
+    background-color: #ff8c42 !important;
+    border-color: #ff8c42 !important;
+}
+
+body.dark-mode .btn-login:hover {
+    background-color: #e67e22 !important;
+    border-color: #e67e22 !important;
+}
+
+body.dark-mode .text-primary {
+    color: #ff8c42 !important;
+}
+
+body.dark-mode a.text-primary:hover {
+    color: #e67e22 !important;
+}
+
+/* En estilologin.css */
+body.dark-mode .text-decoration-none {
+    color: #ff8c42 !important;
+}
+
+body.dark-mode .text-decoration-none:hover {
+    color: #e67e22 !important;
+    text-decoration: underline !important;
+}
     </style>
 </head>
 <body class="bg-light">

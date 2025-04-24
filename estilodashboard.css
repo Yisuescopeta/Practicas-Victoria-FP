@@ -275,3 +275,33 @@ body.dark-mode .logout-link:hover {
     overflow-x: auto;
   }
 }
+
+/* Añade esto al final del archivo estilodashboard.css */
+body.dark-mode .input-group-text {
+  color: #ff8c42 !important;
+  background-color: rgba(255, 140, 66, 0.1) !important;
+}
+
+body.dark-mode .fa-user,
+body.dark-mode .fa-lock,
+body.dark-mode .fa-envelope,
+body.dark-mode .fa-sign-in-alt,
+body.dark-mode .fa-user-plus,
+body.dark-mode .fa-ticket-alt {
+  color: #ff8c42 !important;
+}
+
+/* En estilodashboard.css */
+body.dark-mode .header {
+  border-bottom-color: #ff8c42 !important;
+}
+
+body.dark-mode .new-ticket-button {
+  background-color: #ff8c42 !important;
+  border-color: #ff8c42 !important;
+}
+
+body.dark-mode .new-ticket-button:hover {
+  background-color: #e67e22 !important;
+  border-color: #e67e22 !important;
+}
