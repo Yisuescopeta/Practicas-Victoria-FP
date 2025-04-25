@@ -206,37 +206,5 @@ if (isset($_SESSION['user_id'])) {
 
     <!-- Bootstrap 5 JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        // Script para cambiar entre modo oscuro y modo claro
-        const themeButton = document.getElementById('theme-button');
-        const body = document.body;
-        const icon = themeButton.querySelector('i');
-
-        function applyDarkMode(isDark) {
-            if (isDark) {
-                body.classList.add('dark-mode');
-                themeButton.innerHTML = '<i class="fas fa-sun me-2"></i>Modo Claro';
-                themeButton.classList.remove('btn-primary-custom');
-                themeButton.classList.add('btn-warning');
-            } else {
-                body.classList.remove('dark-mode');
-                themeButton.innerHTML = '<i class="fas fa-moon me-2"></i>Modo Oscuro';
-                themeButton.classList.remove('btn-warning');
-                themeButton.classList.add('btn-primary-custom');
-            }
-        }
-
-        // Cargar preferencia al inicio
-        if (localStorage.getItem('darkMode') === 'true') {
-            applyDarkMode(true);
-        }
-
-        themeButton.addEventListener('click', () => {
-            const isDark = !body.classList.contains('dark-mode');
-            applyDarkMode(isDark);
-            localStorage.setItem('darkMode', isDark);
-        });
-    </script>
 </body>
 </html>

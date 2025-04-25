@@ -129,13 +129,6 @@ body.dark-mode .navbar ul li a {
     transition: all 0.3s ease;
 }
 
-body.dark-mode .form-group input,
-body.dark-mode .form-group select,
-body.dark-mode .form-group textarea {
-    background-color: #3c3c3c;
-    color: #ffffff;
-    border-color: #555;
-}
 
 .form-group textarea {
     resize: vertical;
@@ -177,14 +170,6 @@ body.dark-mode .form-group textarea {
     background-color: #2980b9;
 }
 
-body.dark-mode .cancel-button {
-    background-color: #3c3c3c;
-    color: #ffffff;
-}
-
-body.dark-mode .cancel-button:hover {
-    background-color: #4c4c4c;
-}
 
 /* Mensajes */
 .success-message {
@@ -196,9 +181,6 @@ body.dark-mode .cancel-button:hover {
     text-align: center;
 }
 
-body.dark-mode .success-message {
-    background-color: rgba(46, 204, 113, 0.2);
-}
 
 /* Botón de tema */
 #theme-button {
@@ -212,9 +194,6 @@ body.dark-mode .success-message {
     transition: all 0.3s ease;
 }
 
-body.dark-mode #theme-button {
-    background-color: #ff8c42;
-}
 
 #theme-button:hover {
     opacity: 0.9;
@@ -230,21 +209,4 @@ body.dark-mode #theme-button {
 
 .user-menu:hover {
     background-color: rgba(52, 152, 219, 0.1);
-}
-
-body.dark-mode .user-menu:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-
-/* Añade esto al final del archivo estilocontacto.css */
-body.dark-mode .input-group-text {
-    color: #ff8c42 !important;
-    background-color: rgba(255, 140, 66, 0.1) !important;
-}
-
-body.dark-mode .fa-user,
-body.dark-mode .fa-lock,
-body.dark-mode .fa-envelope {
-    color: #ff8c42 !important;
 }

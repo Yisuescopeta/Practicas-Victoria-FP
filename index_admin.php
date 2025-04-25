@@ -77,32 +77,5 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Script para cambiar entre modo oscuro y modo claro
-        const themeButton = document.getElementById('theme-button');
-        const body = document.body;
-
-        function applyDarkMode(isDark) {
-            if (isDark) {
-                body.classList.add('dark-mode');
-                themeButton.textContent = 'Modo Claro';
-                themeButton.style.backgroundColor = '#ff8c42';
-            } else {
-                body.classList.remove('dark-mode');
-                themeButton.textContent = 'Modo Oscuro';
-                themeButton.style.backgroundColor = '#3498db';
-            }
-        }
-
-        if (localStorage.getItem('darkMode') === 'true') {
-            applyDarkMode(true);
-        }
-
-        themeButton.addEventListener('click', () => {
-            const isDark = !body.classList.contains('dark-mode');
-            applyDarkMode(isDark);
-            localStorage.setItem('darkMode', isDark);
-        });
-    </script>
 </body>
 </html>
