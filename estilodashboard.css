@@ -171,57 +171,6 @@ body {
   background-color: rgba(231, 76, 60, 0.1) !important;
 }
 
-/* Modo oscuro */
-body.dark-mode {
-  background-color: var(--color-bg-dark) !important;
-  color: var(--color-text-dark) !important;
-}
-
-body.dark-mode .bg-white {
-  background-color: var(--color-card-dark) !important;
-}
-
-body.dark-mode .header {
-  border-bottom-color: var(--color-orange);
-}
-
-body.dark-mode #theme-button {
-  background-color: var(--color-orange) !important;
-}
-
-body.dark-mode .user-menu span {
-  color: var(--color-orange) !important;
-}
-
-body.dark-mode .user-menu .dropdown-menu {
-  background-color: var(--color-card-dark);
-  border-color: var(--color-border-dark);
-}
-
-body.dark-mode .user-menu .dropdown-menu a {
-  color: var(--color-text-dark);
-}
-
-body.dark-mode .user-menu .dropdown-menu a:hover {
-  background-color: #333;
-}
-
-body.dark-mode .navbar a {
-  color: var(--color-orange);
-}
-
-body.dark-mode .navbar a:hover {
-  background-color: rgba(255, 140, 66, 0.1);
-}
-
-body.dark-mode .logout-link {
-  color: #ff6b6b !important;
-}
-
-body.dark-mode .logout-link:hover {
-  background-color: rgba(255, 107, 107, 0.1) !important;
-}
-
 /* Estilos para cards */
 .card {
   border-radius: 8px;
@@ -274,34 +223,4 @@ body.dark-mode .logout-link:hover {
     display: block;
     overflow-x: auto;
   }
-}
-
-/* Añade esto al final del archivo estilodashboard.css */
-body.dark-mode .input-group-text {
-  color: #ff8c42 !important;
-  background-color: rgba(255, 140, 66, 0.1) !important;
-}
-
-body.dark-mode .fa-user,
-body.dark-mode .fa-lock,
-body.dark-mode .fa-envelope,
-body.dark-mode .fa-sign-in-alt,
-body.dark-mode .fa-user-plus,
-body.dark-mode .fa-ticket-alt {
-  color: #ff8c42 !important;
-}
-
-/* En estilodashboard.css */
-body.dark-mode .header {
-  border-bottom-color: #ff8c42 !important;
-}
-
-body.dark-mode .new-ticket-button {
-  background-color: #ff8c42 !important;
-  border-color: #ff8c42 !important;
-}
-
-body.dark-mode .new-ticket-button:hover {
-  background-color: #e67e22 !important;
-  border-color: #e67e22 !important;
 }

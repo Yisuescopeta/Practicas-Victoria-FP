@@ -287,51 +287,5 @@ if (!isset($_SESSION['user_id'])) {
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Scripts personalizados -->
-    <script>
-        // Modo oscuro
-        const themeButton = document.getElementById('theme-button');
-        const body = document.body;
-        const icon = themeButton.querySelector('i');
-
-        function applyDarkMode(isDark) {
-            if (isDark) {
-                body.classList.add('dark-mode');
-                icon.classList.replace('fa-moon', 'fa-sun');
-                themeButton.innerHTML = '<i class="fas fa-sun me-1"></i> Modo Claro';
-            } else {
-                body.classList.remove('dark-mode');
-                icon.classList.replace('fa-sun', 'fa-moon');
-                themeButton.innerHTML = '<i class="fas fa-moon me-1"></i> Modo Oscuro';
-            }
-        }
-
-        // Cargar preferencia
-        if (localStorage.getItem('darkMode') === 'true') {
-            applyDarkMode(true);
-        }
-
-        themeButton.addEventListener('click', () => {
-            const isDark = !body.classList.contains('dark-mode');
-            applyDarkMode(isDark);
-            localStorage.setItem('darkMode', isDark);
-        });
-
-        // Menú desplegable de usuario
-        const userMenu = document.querySelector('.user-menu');
-        const dropdownMenu = document.querySelector('.dropdown-menu');
-
-        userMenu.addEventListener('click', () => {
-            dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
-        });
-
-        // Cerrar menú al hacer clic fuera
-        document.addEventListener('click', (e) => {
-            if (!userMenu.contains(e.target)) {
-                dropdownMenu.style.display = 'none';
-            }
-        });
-    </script>
 </body>
 </html>

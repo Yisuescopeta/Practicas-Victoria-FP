@@ -106,20 +106,5 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </main>
     </div>
-
-    <script>
-        // Script para cambiar entre modo oscuro y modo claro
-        const themeButton = document.getElementById('theme-button');
-        const body = document.body;
-
-        themeButton.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            if (body.classList.contains('dark-mode')) {
-                themeButton.textContent = 'Modo Claro';
-            } else {
-                themeButton.textContent = 'Modo Oscuro';
-            }
-        });
-    </script>
 </body>
 </html>

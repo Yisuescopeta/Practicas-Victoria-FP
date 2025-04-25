@@ -7,35 +7,6 @@
     --color-text: #343a40;
 }
 
-/* Modo oscuro */
-body.dark-mode {
-    background-color: #1a1a1a;
-    color: #ffffff;
-}
-
-body.dark-mode .bg-white {
-    background-color: #2c2c2c !important;
-    color: #ffffff;
-}
-
-body.dark-mode .form-control,
-body.dark-mode .form-select,
-body.dark-mode .form-control:focus,
-body.dark-mode .form-select:focus {
-    background-color: #3c3c3c;
-    color: #ffffff;
-    border-color: #555;
-}
-
-body.dark-mode .text-primary {
-    color: var(--color-primary) !important;
-}
-
-body.dark-mode .border-primary {
-    border-color: var(--color-primary) !important;
-}
-
-/* Estilos específicos para el tema */
 .theme-toggle .btn-primary {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
@@ -74,28 +45,3 @@ body.dark-mode .border-primary {
     border-color: var(--color-accent);
 }
 
-/* Estilos para el modo oscuro */
-body.dark-mode .btn-primary {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
-}
-
-body.dark-mode .navbar .nav-link {
-    color: var(--color-primary) !important;
-}
-
-body.dark-mode .navbar .nav-link:hover {
-    color: #2980b9 !important;
-}
-
-/* Añade esto al final del archivo estilocreacionticket.css */
-body.dark-mode .input-group-text {
-    color: #ff8c42 !important;
-    background-color: rgba(255, 140, 66, 0.1) !important;
-}
-
-body.dark-mode .fa-user,
-body.dark-mode .fa-lock,
-body.dark-mode .fa-envelope {
-    color: #ff8c42 !important;
-}

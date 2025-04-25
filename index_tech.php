@@ -42,28 +42,5 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'tech') {
             <!-- Contenido específico para técnicos -->
         </main>
     </div>
-
-    <script>
-        // Script para cambiar entre modo oscuro y modo claro
-        const themeButton = document.getElementById('theme-button');
-        const body = document.body;
-
-        // Cargar preferencia de tema al inicio
-        if (localStorage.getItem('darkMode') === 'true') {
-            body.classList.add('dark-mode');
-            themeButton.textContent = 'Modo Claro';
-        }
-
-        themeButton.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            if (body.classList.contains('dark-mode')) {
-                themeButton.textContent = 'Modo Claro';
-                localStorage.setItem('darkMode', 'true');
-            } else {
-                themeButton.textContent = 'Modo Oscuro';
-                localStorage.setItem('darkMode', 'false');
-            }
-        });
-    </script>
 </body>
 </html>

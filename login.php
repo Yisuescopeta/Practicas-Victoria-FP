@@ -259,41 +259,7 @@ body.dark-mode .text-decoration-none:hover {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- JavaScript para mejoras interactivas -->
-    <script>
-        // ===== [ MODO OSCURO DINÁMICO ] =====
-        const themeButton = document.getElementById('theme-button');
-        const body = document.body;
-        const icon = themeButton.querySelector('i');
-
-        // Cargar preferencia al inicio
-        if (localStorage.getItem('darkMode') === 'true') {
-            enableDarkMode();
-        }
-
-        themeButton.addEventListener('click', toggleDarkMode);
-
-        function toggleDarkMode() {
-            if (body.classList.contains('dark-mode')) {
-                disableDarkMode();
-            } else {
-                enableDarkMode();
-            }
-        }
-
-        function enableDarkMode() {
-            body.classList.add('dark-mode');
-            icon.classList.replace('fa-moon', 'fa-sun');
-            themeButton.innerHTML = '<i class="fas fa-sun me-2"></i> Modo Claro';
-            localStorage.setItem('darkMode', 'true');
-        }
-
-        function disableDarkMode() {
-            body.classList.remove('dark-mode');
-            icon.classList.replace('fa-sun', 'fa-moon');
-            themeButton.innerHTML = '<i class="fas fa-moon me-2"></i> Modo Oscuro';
-            localStorage.setItem('darkMode', 'false');
-        }
-
+<script>
         // ===== [ VALIDACIÓN EN TIEMPO REAL ] =====
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             const username = document.getElementById('username').value.trim();
