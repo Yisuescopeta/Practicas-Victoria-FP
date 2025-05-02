@@ -63,8 +63,12 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
     $query['orderby'] = $field;
     $query['dir'] = $newDir;
     $url = htmlspecialchars($_SERVER['PHP_SELF']) . '?' . http_build_query($query);
-    return "<a href=\"$url\">$label</a>";
+    return "<a href=\"$url\" class=\"text-white\">$label <i class=\"fas fa-sort\"></i></a>";
 }
+
+// Mensaje de éxito si existe
+$mensaje = $_GET['mensaje'] ?? '';
+$tipoMensaje = $_GET['tipo_mensaje'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -72,7 +76,7 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Tickets</title>
+    <title>Mis Tickets - Sistema de Tickets</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
@@ -81,11 +85,15 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --color-primary: #3498db;  /* Azul */
+            --color-primary: #3498db;
+            --color-primary-dark: #e67e22;
             --color-bg: #f8f9fa;
             --color-text: #343a40;
             --color-card: #ffffff;
             --color-border: #dee2e6;
+            --color-success: #28a745;
+            --color-danger: #dc3545;
+            --color-warning: #ffc107;
         }
 
         body {
@@ -95,7 +103,14 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
             transition: all 0.3s ease;
         }
 
-        /* Header mejorado */
+        body.dark-mode {
+            --color-primary: #ff8c42;
+            --color-bg: #121212;
+            --color-text: #f8f9fa;
+            --color-card: #1e1e1e;
+            --color-border: #444;
+        }
+
         .header {
             background: var(--color-card);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -113,28 +128,101 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
             opacity: 0.8;
         }
 
-        /* Cards de resumen */
-        .summary-card {
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-            border-left: 4px solid var(--color-primary);
+        .tickets-container {
             background-color: var(--color-card);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
-        .summary-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        body.dark-mode .tickets-container {
+            background-color: #2c2c2c;
         }
 
-        .card-icon {
-            font-size: 1.8rem;
+        .tickets-title {
             color: var(--color-primary);
+            margin-bottom: 25px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Tabla de tickets */
+        .filter-form {
+            background-color: var(--color-card);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .filter-form label {
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .filter-form .form-control,
+        .filter-form .form-select {
+            background-color: var(--color-card);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+
+        body.dark-mode .filter-form .form-control,
+        body.dark-mode .filter-form .form-select {
+            background-color: #3c3c3c;
+            border-color: #555;
+        }
+
+        .btn-filter {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-filter:hover {
+            background-color: var(--color-primary-dark);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        .btn-clear {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-clear:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            color: white;
+        }
+
         .tickets-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
             border-radius: 10px;
             overflow: hidden;
         }
@@ -144,11 +232,34 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
             color: white;
         }
 
+        .tickets-table th {
+            padding: 15px;
+            text-align: left;
+        }
+
+        .tickets-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .tickets-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tickets-table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        body.dark-mode .tickets-table tbody tr:hover {
+            background-color: rgba(255, 140, 66, 0.05);
+        }
+
         .status-badge {
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+            display: inline-block;
         }
 
         .status-open {
@@ -156,54 +267,84 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
             color: #856404;
         }
 
+        .status-in_progress {
+            background-color: #bee5eb;
+            color: #0c5460;
+        }
+
         .status-resolved {
             background-color: #c3e6cb;
             color: #155724;
         }
 
-        /* Botón nuevo ticket */
+        .status-closed {
+            background-color: #d6d8db;
+            color: #383d41;
+        }
+
         .btn-new-ticket {
-            background: var(--color-primary);
+            background-color: var(--color-primary);
+            color: white;
             border: none;
             padding: 10px 20px;
+            border-radius: 6px;
             font-weight: 600;
             transition: all 0.3s;
-            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn-new-ticket:hover {
-            background: var(--color-primary);
+            background-color: var(--color-primary-dark);
             transform: translateY(-2px);
             color: white;
         }
 
-        /* Panel */
-        .panel {
-            background-color: var(--color-card);
-            border: 1px solid var(--color-border);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-right: 5px;
         }
 
-        .panel-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
+        .btn-view {
+            background-color: transparent;
+            border: 1px solid var(--color-primary);
             color: var(--color-primary);
         }
 
-        .panel-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+        .btn-view:hover {
+            background-color: var(--color-primary);
+            color: white;
         }
 
-        .element {
-            margin-bottom: 20px;
+        .btn-edit {
+            background-color: transparent;
+            border: 1px solid var(--color-warning);
+            color: var(--color-warning);
         }
 
-        /* Navbar lateral */
+        .btn-edit:hover {
+            background-color: var(--color-warning);
+            color: white;
+        }
+
+        .btn-delete {
+            background-color: transparent;
+            border: 1px solid var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        .btn-delete:hover {
+            background-color: var(--color-danger);
+            color: white;
+        }
+
         .sidebar {
             background-color: var(--color-card);
             border-radius: 10px;
@@ -217,6 +358,9 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
             border-radius: 5px;
             margin-bottom: 5px;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .nav-link:hover, .nav-link.active {
@@ -224,19 +368,43 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
             color: var(--color-primary);
         }
 
-        .nav-link i {
-            width: 20px;
+        body.dark-mode .nav-link:hover, 
+        body.dark-mode .nav-link.active {
+            background-color: rgba(255, 140, 66, 0.1);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid var(--color-success);
+            color: var(--color-success);
+        }
+
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        .main-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .no-tickets {
+            padding: 20px;
             text-align: center;
-            margin-right: 10px;
-        }
-
-        /* Tabla */
-        .table {
             color: var(--color-text);
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -250,6 +418,9 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
                              alt="Logo" style="max-width: 150px;">
                     </div>
                     <div class="d-flex align-items-center gap-4">
+                        <button id="theme-button" class="btn btn-sm">
+                            <i class="fas fa-moon"></i> Modo Oscuro
+                        </button>
                         <div class="user-menu position-relative">
                             <span class="d-flex align-items-center gap-2">
                                 <i class="fas fa-user-circle"></i>
@@ -276,12 +447,12 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
                     <nav class="sidebar">
                         <ul class="nav flex-column w-100">
                             <li class="nav-item">
-                                <a class="nav-link active d-flex align-items-center gap-2" href="dashboard.php">
+                                <a class="nav-link d-flex align-items-center gap-2" href="dashboard.php">
                                     <i class="fas fa-tachometer-alt"></i> Panel
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center gap-2" href="misTickets.php">
+                                <a class="nav-link active d-flex align-items-center gap-2" href="misTickets.php">
                                     <i class="fas fa-ticket-alt"></i> Mis Tickets
                                 </a>
                             </li>
@@ -306,70 +477,141 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
 
                 <div class="col-md-9">
                     <main class="main-content">
-                        <h2 class="mb-4">Mis Tickets</h2>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="main-title">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span>Mis Tickets</span>
+                            </h2>
+                            <a href="crearTicket.php" class="btn-new-ticket">
+                                <i class="fas fa-plus"></i>
+                                <span>Nuevo Ticket</span>
+                            </a>
+                        </div>
                         
-                        <!-- Formulario de filtrado -->
-                        <form method="GET" class="filter-form">
-                            <label for="status">Estado:</label>
-                            <select name="status" id="status">
-                                <option value="">Todos</option>
-                                <option value="open" <?= $estado === 'open' ? 'selected' : '' ?>>Abierto</option>
-                                <option value="in_progress" <?= $estado === 'in_progress' ? 'selected' : '' ?>>En progreso</option>
-                                <option value="resolved" <?= $estado === 'resolved' ? 'selected' : '' ?>>Resuelto</option>
-                                <option value="closed" <?= $estado === 'closed' ? 'selected' : '' ?>>Cerrado</option>
-                            </select>
-
-                            <label for="category">Categoría:</label>
-                            <select name="category" id="category">
-                                <option value="">Todas</option>
-                                <option value="Hardware" <?= $categoria === 'Hardware' ? 'selected' : '' ?>>Hardware</option>
-                                <option value="Software" <?= $categoria === 'Software' ? 'selected' : '' ?>>Software</option>
-                                <option value="Red" <?= $categoria === 'Red' ? 'selected' : '' ?>>Red</option>
-                                <option value="Otros" <?= $categoria === 'Otros' ? 'selected' : '' ?>>Otros</option>
-                            </select>
-
-                            <label for="start_date">Desde:</label>
-                            <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($fecha_inicio) ?>">
-
-                            <label for="end_date">Hasta:</label>
-                            <input type="date" name="end_date" id="end_date" value="<?= htmlspecialchars($fecha_fin) ?>">
-
-                            <button type="submit" class="btn btn-primary">Filtrar</button>
-                        </form>
-
-                        <?php if (count($tickets) > 0): ?>
-                        <table class="table table-hover tickets-table">
-                            <thead>
-                                <tr>
-                                    <th><?= linkWithOrder('title', 'Título', $orderBy, $orderDir) ?></th>
-                                    <th>Descripción</th>
-                                    <th><?= linkWithOrder('category_name', 'Categoría', $orderBy, $orderDir) ?></th>
-                                    <th><?= linkWithOrder('created_at', 'Fecha de creación', $orderBy, $orderDir) ?></th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($tickets as $ticket): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($ticket['title']) ?></td>
-                                    <td><?= htmlspecialchars($ticket['description']) ?></td>
-                                    <td><?= htmlspecialchars($ticket['category_name']) ?></td>
-                                    <td><?= htmlspecialchars($ticket['created_at']) ?></td>
-                                    <td>
-                                        <form action="eliminar_ticket.php" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este ticket?');">
-                                            <input type="hidden" name="ticket_id" value="<?= $ticket['id'] ?>">
-                                            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                                        </form>
-                                        <a href="editar_ticket.php?id=<?= $ticket['id'] ?>" class="btn btn-primary btn-sm">Editar</a>
-                                        <a href="ver_ticket.php?id=<?= $ticket['id'] ?>" class="btn btn-info btn-sm">Ver Comentarios</a>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        <?php else: ?>
-                        <p>No tienes tickets registrados.</p>
+                        <?php if ($mensaje): ?>
+                            <div class="alert <?= $tipoMensaje === 'success' ? 'alert-success' : 'alert-danger' ?>">
+                                <i class="fas <?= $tipoMensaje === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle' ?>"></i>
+                                <?= htmlspecialchars($mensaje) ?>
+                            </div>
                         <?php endif; ?>
+
+                        <div class="tickets-container">
+                            <h3 class="tickets-title">
+                                <i class="fas fa-filter"></i>
+                                <span>Filtrar Tickets</span>
+                            </h3>
+                            
+                            <form method="GET" class="filter-form">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="status">Estado:</label>
+                                        <select name="status" id="status" class="form-select">
+                                            <option value="">Todos</option>
+                                            <option value="open" <?= $estado === 'open' ? 'selected' : '' ?>>Abierto</option>
+                                            <option value="in_progress" <?= $estado === 'in_progress' ? 'selected' : '' ?>>En progreso</option>
+                                            <option value="resolved" <?= $estado === 'resolved' ? 'selected' : '' ?>>Resuelto</option>
+                                            <option value="closed" <?= $estado === 'closed' ? 'selected' : '' ?>>Cerrado</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="category">Categoría:</label>
+                                        <select name="category" id="category" class="form-select">
+                                            <option value="">Todas</option>
+                                            <option value="Hardware" <?= $categoria === 'Hardware' ? 'selected' : '' ?>>Hardware</option>
+                                            <option value="Software" <?= $categoria === 'Software' ? 'selected' : '' ?>>Software</option>
+                                            <option value="Red" <?= $categoria === 'Red' ? 'selected' : '' ?>>Red</option>
+                                            <option value="Otros" <?= $categoria === 'Otros' ? 'selected' : '' ?>>Otros</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="start_date">Desde:</label>
+                                        <input type="date" name="start_date" id="start_date" class="form-control" 
+                                               value="<?= htmlspecialchars($fecha_inicio) ?>">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="end_date">Hasta:</label>
+                                        <input type="date" name="end_date" id="end_date" class="form-control" 
+                                               value="<?= htmlspecialchars($fecha_fin) ?>">
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn-filter">
+                                            <i class="fas fa-filter"></i>
+                                            <span>Filtrar</span>
+                                        </button>
+                                        <a href="misTickets.php" class="btn-clear">
+                                            <i class="fas fa-sync-alt"></i>
+                                            <span>Limpiar</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <h3 class="tickets-title mt-4">
+                                <i class="fas fa-list"></i>
+                                <span>Lista de Tickets</span>
+                            </h3>
+                            
+                            <div class="table-responsive">
+                                <table class="tickets-table">
+                                    <thead>
+                                        <tr>
+                                            <th><?= linkWithOrder('title', 'Título', $orderBy, $orderDir) ?></th>
+                                            <th>Descripción</th>
+                                            <th><?= linkWithOrder('category_name', 'Categoría', $orderBy, $orderDir) ?></th>
+                                            <th><?= linkWithOrder('created_at', 'Fecha', $orderBy, $orderDir) ?></th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (count($tickets) > 0): ?>
+                                            <?php foreach ($tickets as $ticket): ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($ticket['title']) ?></td>
+                                                <td><?= htmlspecialchars(substr($ticket['description'], 0, 50)) ?>...</td>
+                                                <td><?= htmlspecialchars($ticket['category_name']) ?></td>
+                                                <td><?= date('d/m/Y', strtotime($ticket['created_at'])) ?></td>
+                                                <td>
+                                                    <span class="status-badge status-<?= htmlspecialchars($ticket['status']) ?>">
+                                                        <?= htmlspecialchars($ticket['status']) ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex">
+                                                        <a href="ver_ticket.php?id=<?= $ticket['id'] ?>" 
+                                                           class="btn-action btn-view" 
+                                                           title="Ver detalles">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="editar_ticket.php?id=<?= $ticket['id'] ?>" 
+                                                           class="btn-action btn-edit" 
+                                                           title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <form action="eliminar_ticket.php" method="POST" 
+                                                              onsubmit="return confirm('¿Estás seguro de eliminar este ticket?');"
+                                                              class="d-inline">
+                                                            <input type="hidden" name="ticket_id" value="<?= $ticket['id'] ?>">
+                                                            <button type="submit" class="btn-action btn-delete" 
+                                                                    title="Eliminar">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <tr>
+                                                <td colspan="6" class="no-tickets">
+                                                    <i class="fas fa-info-circle"></i> No se encontraron tickets con los filtros actuales
+                                                </td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </main>
                 </div>
             </div>
@@ -379,7 +621,6 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Scripts personalizados -->
     <script>
         // Menú desplegable de usuario
         const userMenu = document.querySelector('.user-menu');
@@ -393,6 +634,29 @@ function linkWithOrder($field, $label, $currentField, $currentDir) {
         document.addEventListener('click', (e) => {
             if (!userMenu.contains(e.target)) {
                 dropdownMenu.style.display = 'none';
+            }
+        });
+
+        // Tema oscuro/claro
+        const themeButton = document.getElementById('theme-button');
+        const body = document.body;
+
+        // Verificar preferencia guardada
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            themeButton.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+        }
+
+        themeButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            
+            if (isDarkMode) {
+                themeButton.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                themeButton.innerHTML = '<i class="fas fa-moon"></i> Modo Oscuro';
+                localStorage.setItem('darkMode', 'disabled');
             }
         });
     </script>
