@@ -7,10 +7,27 @@ if (!isset($_SESSION['id'])) {
     exit();
 }
 
-$sql = "SELECT * FROM tickets WHERE user_id = :user_id";
+// Obtener tickets del usuario
+$sql = "SELECT * FROM tickets WHERE user_id = :user_id ORDER BY created_at DESC LIMIT 5";
 $stmt = $pdo->prepare($sql);
 $stmt->execute(['user_id' => $_SESSION['id']]);
 $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Contar tickets por estado
+$counts = [
+    'open' => 0,
+    'in_progress' => 0,
+    'resolved' => 0,
+    'closed' => 0
+];
+
+foreach ($tickets as $ticket) {
+    $counts[$ticket['status']]++;
+}
+
+// Mensaje de éxito si existe
+$mensaje = $_GET['mensaje'] ?? '';
+$tipoMensaje = $_GET['tipo_mensaje'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -25,14 +42,17 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="estilodashboard.css">
     <style>
         :root {
-            --color-primary: #3498db;  /* Azul en modo claro */
+            --color-primary: #3498db;
+            --color-primary-dark: #e67e22;
             --color-bg: #f8f9fa;
             --color-text: #343a40;
             --color-card: #ffffff;
             --color-border: #dee2e6;
+            --color-success: #28a745;
+            --color-danger: #dc3545;
+            --color-warning: #ffc107;
         }
 
         body {
@@ -42,7 +62,14 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             transition: all 0.3s ease;
         }
 
-        /* Header mejorado */
+        body.dark-mode {
+            --color-primary: #ff8c42;
+            --color-bg: #121212;
+            --color-text: #f8f9fa;
+            --color-card: #1e1e1e;
+            --color-border: #444;
+        }
+
         .header {
             background: var(--color-card);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -60,14 +87,37 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             opacity: 0.8;
         }
 
-        /* Cards de resumen */
+        .dashboard-container {
+            background-color: var(--color-card);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .dashboard-container {
+            background-color: #2c2c2c;
+        }
+
+        .dashboard-title {
+            color: var(--color-primary);
+            margin-bottom: 25px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .summary-card {
             border-radius: 10px;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-            border-left: 4px solid var(--color-primary);
+            padding: 20px;
+            margin-bottom: 20px;
             background-color: var(--color-card);
+            border-left: 4px solid var(--color-primary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
         }
 
         .summary-card:hover {
@@ -75,13 +125,29 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             box-shadow: 0 10px 15px rgba(0,0,0,0.1);
         }
 
-        .card-icon {
-            font-size: 1.8rem;
+        .summary-title {
+            font-size: 1rem;
+            color: var(--color-text);
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
             color: var(--color-primary);
         }
 
-        /* Tabla de tickets */
+        .card-icon {
+            font-size: 2rem;
+            color: var(--color-primary);
+            opacity: 0.7;
+        }
+
         .tickets-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
             border-radius: 10px;
             overflow: hidden;
         }
@@ -91,11 +157,30 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: white;
         }
 
+        .tickets-table th {
+            padding: 15px;
+            text-align: left;
+        }
+
+        .tickets-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .tickets-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tickets-table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
         .status-badge {
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+            display: inline-block;
         }
 
         .status-open {
@@ -103,54 +188,57 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #856404;
         }
 
+        .status-in_progress {
+            background-color: #bee5eb;
+            color: #0c5460;
+        }
+
         .status-resolved {
             background-color: #c3e6cb;
             color: #155724;
         }
 
-        /* Botón nuevo ticket */
+        .status-closed {
+            background-color: #d6d8db;
+            color: #383d41;
+        }
+
         .btn-new-ticket {
-            background: var(--color-primary);
+            background-color: var(--color-primary);
+            color: white;
             border: none;
             padding: 10px 20px;
+            border-radius: 6px;
             font-weight: 600;
             transition: all 0.3s;
-            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn-new-ticket:hover {
-            background: var(--color-primary-dark);
+            background-color: var(--color-primary-dark);
             transform: translateY(-2px);
             color: white;
         }
 
-        /* Panel */
-        .panel {
-            background-color: var(--color-card);
-            border: 1px solid var(--color-border);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .panel-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
+        .btn-view {
+            background-color: transparent;
+            border: 1px solid var(--color-primary);
             color: var(--color-primary);
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .panel-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+        .btn-view:hover {
+            background-color: var(--color-primary);
+            color: white;
         }
 
-        .element {
-            margin-bottom: 20px;
-        }
-
-        /* Navbar lateral */
         .sidebar {
             background-color: var(--color-card);
             border-radius: 10px;
@@ -164,6 +252,9 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 5px;
             margin-bottom: 5px;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .nav-link:hover, .nav-link.active {
@@ -171,19 +262,43 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: var(--color-primary);
         }
 
-        .nav-link i {
-            width: 20px;
+        body.dark-mode .nav-link:hover, 
+        body.dark-mode .nav-link.active {
+            background-color: rgba(255, 140, 66, 0.1);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid var(--color-success);
+            color: var(--color-success);
+        }
+
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        .main-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .no-tickets {
+            padding: 20px;
             text-align: center;
-            margin-right: 10px;
-        }
-
-        /* Tabla */
-        .table {
             color: var(--color-text);
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -197,6 +312,9 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
                              alt="Logo" style="max-width: 150px;">
                     </div>
                     <div class="d-flex align-items-center gap-4">
+                        <button id="theme-button" class="btn btn-sm">
+                            <i class="fas fa-moon"></i> Modo Oscuro
+                        </button>
                         <div class="user-menu position-relative">
                             <span class="d-flex align-items-center gap-2">
                                 <i class="fas fa-user-circle"></i>
@@ -253,108 +371,113 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <div class="col-md-9">
                     <main class="main-content">
-                        <h2 class="mb-4">Bienvenido, <?php echo htmlspecialchars($_SESSION['username']); ?></h2>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="main-title">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Panel de Usuario</span>
+                            </h2>
+                        </div>
                         
-                        <!-- Contenedor de los paneles -->
-                        <div class="panel-container">
-                            <!-- Panel 1 -->
-                            <div class="panel">
-                                <h2 class="panel-title">Resumen rápido</h2>
-                                <div class="row mb-4 summary-cards">
-                                    <div class="col-md-4 mb-3">
-                                        <div class="summary-card p-3 h-100">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h5 class="text-muted">Tickets Abiertos</h5>
-                                                    <h2 class="mb-0"><?php echo count(array_filter($tickets, function($ticket) { 
-                                                        return $ticket['status'] == 'open' || $ticket['status'] == 'in_progress'; 
-                                                    })); ?></h2>
-                                                </div>
-                                                <i class="fas fa-exclamation-circle card-icon"></i>
+                        <?php if ($mensaje): ?>
+                            <div class="alert <?= $tipoMensaje === 'success' ? 'alert-success' : 'alert-danger' ?>">
+                                <i class="fas <?= $tipoMensaje === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle' ?>"></i>
+                                <?= htmlspecialchars($mensaje) ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="dashboard-container">
+                            <h3 class="dashboard-title">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Resumen de Tickets</span>
+                            </h3>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="summary-card">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="summary-title">Tickets Abiertos</div>
+                                                <div class="summary-value"><?= $counts['open'] + $counts['in_progress'] ?></div>
                                             </div>
+                                            <i class="fas fa-exclamation-circle card-icon"></i>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <div class="summary-card p-3 h-100">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h5 class="text-muted">Tickets Resueltos</h5>
-                                                    <h2 class="mb-0"><?php echo count(array_filter($tickets, function($ticket) { 
-                                                        return $ticket['status'] == 'resolved' || $ticket['status'] == 'closed'; 
-                                                    })); ?></h2>
-                                                </div>
-                                                <i class="fas fa-check-circle card-icon"></i>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="summary-card">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="summary-title">Tickets Resueltos</div>
+                                                <div class="summary-value"><?= $counts['resolved'] + $counts['closed'] ?></div>
                                             </div>
+                                            <i class="fas fa-check-circle card-icon"></i>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <div class="summary-card p-3 h-100">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h5 class="text-muted">Total Tickets</h5>
-                                                    <h2 class="mb-0"><?php echo count($tickets); ?></h2>
-                                                </div>
-                                                <i class="fas fa-ticket-alt card-icon"></i>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="summary-card">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="summary-title">Total Tickets</div>
+                                                <div class="summary-value"><?= count($tickets) ?></div>
                                             </div>
+                                            <i class="fas fa-ticket-alt card-icon"></i>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Panel 2 -->
-                            <div class="panel">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h2 class="panel-title mb-0">Tickets Recientes</h2>
-                                    <a href="crearTicket.php" class="btn btn-new-ticket">
-                                        <i class="fas fa-plus me-1"></i> Nuevo Ticket
-                                    </a>
-                                </div>
-                                <div class="card shadow-sm">
-                                    <div class="card-body p-0">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover tickets-table mb-0">
-                                                <thead>
-                                                    <tr>
-                                                        <th>ID</th>
-                                                        <th>Título</th>
-                                                        <th>Descripción</th>
-                                                        <th>Prioridad</th>
-                                                        <th>Estado</th>
-                                                        <th>Fecha de creación</th>
-                                                        <th>Acciones</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php if (count($tickets) > 0): ?>
-                                                        <?php foreach ($tickets as $ticket): ?>
-                                                        <tr>
-                                                            <td><?php echo htmlspecialchars($ticket['id']); ?></td>
-                                                            <td><?php echo htmlspecialchars($ticket['title']); ?></td>
-                                                            <td><?php echo htmlspecialchars(substr($ticket['description'], 0, 50)); ?>...</td>
-                                                            <td><?php echo htmlspecialchars($ticket['priority']); ?></td>
-                                                            <td>
-                                                                <span class="status-badge status-<?php echo htmlspecialchars($ticket['status']); ?>">
-                                                                    <?php echo htmlspecialchars($ticket['status']); ?>
-                                                                </span>
-                                                            </td>
-                                                            <td><?php echo htmlspecialchars($ticket['created_at']); ?></td>
-                                                            <td>
-                                                                <a href="ver_ticket.php?id=<?php echo $ticket['id']; ?>" class="btn btn-sm btn-outline-primary">
-                                                                    <i class="fas fa-eye"></i> Ver
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                        <?php endforeach; ?>
-                                                    <?php else: ?>
-                                                        <tr>
-                                                            <td colspan="7" class="text-center">No hay tickets registrados</td>
-                                                        </tr>
-                                                    <?php endif; ?>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
+                            <h3 class="dashboard-title mt-5">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span>Tickets Recientes</span>
+                                <a href="crearTicket.php" class="btn-new-ticket ms-auto">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Nuevo Ticket</span>
+                                </a>
+                            </h3>
+                            
+                            <div class="table-responsive">
+                                <table class="tickets-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Título</th>
+                                            <th>Prioridad</th>
+                                            <th>Estado</th>
+                                            <th>Fecha</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (count($tickets) > 0): ?>
+                                            <?php foreach ($tickets as $ticket): ?>
+                                            <tr>
+                                                <td>#<?= htmlspecialchars($ticket['id']) ?></td>
+                                                <td><?= htmlspecialchars($ticket['title']) ?></td>
+                                                <td><?= htmlspecialchars($ticket['priority']) ?></td>
+                                                <td>
+                                                    <span class="status-badge status-<?= htmlspecialchars($ticket['status']) ?>">
+                                                        <?= htmlspecialchars($ticket['status']) ?>
+                                                    </span>
+                                                </td>
+                                                <td><?= date('d/m/Y', strtotime($ticket['created_at'])) ?></td>
+                                                <td>
+                                                    <a href="ver_ticket.php?id=<?= $ticket['id'] ?>" class="btn-view">
+                                                        <i class="fas fa-eye"></i>
+                                                        <span>Ver</span>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <tr>
+                                                <td colspan="6" class="no-tickets">
+                                                    <i class="fas fa-info-circle"></i> No hay tickets registrados
+                                                </td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </main>
@@ -366,7 +489,6 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Scripts personalizados -->
     <script>
         // Menú desplegable de usuario
         const userMenu = document.querySelector('.user-menu');
@@ -380,6 +502,29 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
         document.addEventListener('click', (e) => {
             if (!userMenu.contains(e.target)) {
                 dropdownMenu.style.display = 'none';
+            }
+        });
+
+        // Tema oscuro/claro
+        const themeButton = document.getElementById('theme-button');
+        const body = document.body;
+
+        // Verificar preferencia guardada
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            themeButton.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+        }
+
+        themeButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            
+            if (isDarkMode) {
+                themeButton.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                themeButton.innerHTML = '<i class="fas fa-moon"></i> Modo Oscuro';
+                localStorage.setItem('darkMode', 'disabled');
             }
         });
     </script>

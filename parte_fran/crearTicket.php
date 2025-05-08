@@ -3,15 +3,72 @@ session_start();
 require 'database.php';
 
 if (!isset($_SESSION['id'])) {
-    header('Location: login.php');
+    header("Location: login.php");
     exit();
 }
+
+$user_id = $_SESSION['id'];
 
 // Consulta a la base de datos para obtener las categorías
 $sql = "SELECT * FROM categories";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $title = trim($_POST['title']);
+    $category_id = $_POST['category'];
+    $priority = $_POST['priority'];
+    $description = trim($_POST['description']);
+    $attachment_path = null;
+
+    if (empty($title) || empty($category_id) || empty($priority) || empty($description)) {
+        echo "Todos los campos son obligatorios.";
+        exit();
+    }
+
+    if (!empty($_FILES['attachment']['name'])) {
+        $upload_dir = "uploads/";
+   
+        // Verifica si la carpeta de carga existe, si no, la crea
+        if (!is_dir($upload_dir)) {
+            if (!mkdir($upload_dir, 0777, true)) {
+                echo "Error al crear la carpeta de subida.";
+                exit();
+            }
+        }
+   
+        $filename = basename($_FILES["attachment"]["name"]);
+        $target_file = $upload_dir . time() . "_" . $filename;
+       
+        if (move_uploaded_file($_FILES["attachment"]["tmp_name"], $target_file)) {
+            $attachment_path = $target_file;
+        } else {
+            echo "Error al subir el archivo.";
+            exit();
+        }
+    }
+
+    try {
+        $pdo->beginTransaction();
+        $stmt = $pdo->prepare("INSERT INTO tickets (user_id, category_id, title, description, priority, status, created_at) VALUES (?, ?, ?, ?, ?, 'open', NOW())");
+        $stmt->execute([$user_id, $category_id, $title, $description, $priority]);
+
+        $ticket_id = $pdo->lastInsertId();
+
+        if ($attachment_path) {
+            $stmt = $pdo->prepare("INSERT INTO attachments (ticket_id, filename, filepath, filesize) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$ticket_id, $filename, $attachment_path, $_FILES['attachment']['size']]);
+        }
+
+        $pdo->commit();
+        header("Location: dashboard.php");
+        exit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        echo "Error al crear el ticket: " . $e->getMessage();
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -26,10 +83,10 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="estilodashboard.css">
     <style>
         :root {
-            --color-primary: #3498db;  /* Azul en modo claro */
+            --color-primary: #3498db;
+            --color-primary-dark: #e67e22;
             --color-bg: #f8f9fa;
             --color-text: #343a40;
             --color-card: #ffffff;
@@ -61,74 +118,102 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
             opacity: 0.8;
         }
 
-        /* Tabla de tickets */
-        .tickets-table {
+        /* Formulario */
+        .form-container {
+            background-color: var(--color-card);
             border-radius: 10px;
-            overflow: hidden;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
-        .tickets-table thead {
-            background-color: var(--color-primary);
-            color: white;
+        .form-title {
+            color: var(--color-primary);
+            margin-bottom: 25px;
+            font-weight: 700;
         }
 
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
             font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--color-primary);
         }
 
-        .status-open {
-            background-color: #ffeeba;
-            color: #856404;
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: var(--color-card);
+            color: var(--color-text);
         }
 
-        .status-resolved {
-            background-color: #c3e6cb;
-            color: #155724;
+        .form-control:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+            outline: none;
         }
 
-        /* Botón nuevo ticket */
-        .btn-new-ticket {
-            background: var(--color-primary);
-            border: none;
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
             padding: 10px 20px;
+            border-radius: 6px;
             font-weight: 600;
             transition: all 0.3s;
-            color: white;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .btn-new-ticket:hover {
-            background: var(--color-primary-dark);
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5a6268;
             transform: translateY(-2px);
             color: white;
         }
 
-        /* Panel */
-        .panel {
-            background-color: var(--color-card);
-            border: 1px solid var(--color-border);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
         }
 
-        .panel-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: var(--color-primary);
-        }
-
-        .panel-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .element {
-            margin-bottom: 20px;
+        .btn-primary:hover {
+            background-color: var(--color-primary-dark);
+            transform: translateY(-2px);
+            color: white;
         }
 
         /* Navbar lateral */
@@ -145,6 +230,9 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 5px;
             margin-bottom: 5px;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .nav-link:hover, .nav-link.active {
@@ -155,16 +243,45 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .nav-link i {
             width: 20px;
             text-align: center;
-            margin-right: 10px;
         }
 
-        /* Tabla */
-        .table {
-            color: var(--color-text);
+        /* File input personalizado */
+        .custom-file-input {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
         }
 
-        .table-hover tbody tr:hover {
+        .custom-file-input input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .custom-file-label {
+            display: block;
+            padding: 10px 15px;
+            background-color: var(--color-card);
+            border: 1px dashed var(--color-border);
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .custom-file-label:hover {
+            border-color: var(--color-primary);
             background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .main-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
     </style>
 </head>
@@ -204,7 +321,7 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <nav class="sidebar">
                         <ul class="nav flex-column w-100">
                             <li class="nav-item">
-                                <a class="nav-link active d-flex align-items-center gap-2" href="dashboard.php">
+                                <a class="nav-link d-flex align-items-center gap-2" href="dashboard.php">
                                     <i class="fas fa-tachometer-alt"></i> Panel
                                 </a>
                             </li>
@@ -214,7 +331,7 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center gap-2" href="crearTicket.php">
+                                <a class="nav-link active d-flex align-items-center gap-2" href="crearTicket.php">
                                     <i class="fas fa-plus-circle"></i> Nuevo Ticket
                                 </a>
                             </li>
@@ -234,59 +351,77 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <div class="col-md-9">
                     <main class="main-content">
-                        <h2 class="mb-4">Crear Nuevo Ticket</h2>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="main-title">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Crear Nuevo Ticket</span>
+                            </h2>
+                            <a href="misTickets.php" class="btn btn-primary">
+                                <i class="fas fa-ticket-alt me-1"></i> Ver Mis Tickets
+                            </a>
+                        </div>
                         
-                        <!-- Contenedor de los paneles -->
-                        <div class="panel-container">
-                            <!-- Panel 2 -->
-                            <div class="panel">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h2 class="panel-title mb-0">Crear Nuevo Ticket</h2>
+                        <div class="form-container">
+                            <h3 class="form-title"><i class="fas fa-ticket-alt me-2"></i>Complete los datos del ticket</h3>
+                            
+                            <form action="crearTicket.php" method="POST" enctype="multipart/form-data">
+                                <div class="form-group">
+                                    <label for="title"><i class="fas fa-heading me-2"></i>Título:</label>
+                                    <input type="text" id="title" name="title" class="form-control" placeholder="Ingrese un título descriptivo" required>
                                 </div>
-                                <div class="card shadow-sm">
-                                    <div class="card-body p-0">
-                                        <div class="table-responsive">
-                                            <form action="crearTicket.php" method="POST" enctype="multipart/form-data">
-                                                <div class="form-group">
-                                                    <label for="title">Título:</label>
-                                                    <input type="text" id="title" name="title" required>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="category">Categoría:</label>
-                                                    <select id="category" name="category" required>
-                                                        <?php
-                                                        foreach ($categorias as $categoria) {
-                                                            echo "<option value='" . htmlspecialchars($categoria['id']) . "'>" . htmlspecialchars($categoria['name']) . "</option>";
-                                                        }
-                                                        ?>
-                                                    </select>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="priority">Prioridad:</label>
-                                                    <select id="priority" name="priority" required>
-                                                        <option value="low">Baja</option>
-                                                        <option value="medium">Media</option>
-                                                        <option value="high">Alta</option>
-                                                        <option value="urgent">Urgente</option>
-                                                    </select>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="description">Descripción:</label>
-                                                    <textarea id="description" name="description" rows="5" required></textarea>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="attachment">Adjuntar archivo:</label>
-                                                    <input type="file" id="attachment" name="attachment">
-                                                </div>
-                                                <div class="form-actions">
-                                                    <button type="button" class="cancel-button" onclick="window.location.href='dashboard.php'">Cancelar</button>
-                                                    <button type="submit" class="create-ticket-button">Crear Ticket</button>
-                                                </div>
-                                            </form>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="category"><i class="fas fa-tag me-2"></i>Categoría:</label>
+                                            <select id="category" name="category" class="form-control" required>
+                                                <?php foreach ($categorias as $categoria): ?>
+                                                    <option value="<?= htmlspecialchars($categoria['id']) ?>">
+                                                        <?= htmlspecialchars($categoria['name']) ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="priority"><i class="fas fa-exclamation-circle me-2"></i>Prioridad:</label>
+                                            <select id="priority" name="priority" class="form-control" required>
+                                                <option value="low">Baja</option>
+                                                <option value="medium" selected>Media</option>
+                                                <option value="high">Alta</option>
+                                                <option value="urgent">Urgente</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                                
+                                <div class="form-group">
+                                    <label for="description"><i class="fas fa-align-left me-2"></i>Descripción:</label>
+                                    <textarea id="description" name="description" class="form-control" 
+                                              placeholder="Describa el problema con detalle..." required></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label><i class="fas fa-paperclip me-2"></i>Adjuntar archivo (opcional):</label>
+                                    <div class="custom-file-input">
+                                        <input type="file" id="attachment" name="attachment" class="form-control-file">
+                                        <label for="attachment" class="custom-file-label">
+                                            <i class="fas fa-cloud-upload-alt me-2"></i>
+                                            <span id="file-name">Seleccionar archivo</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-cancel" onclick="window.location.href='dashboard.php'">
+                                        <i class="fas fa-times me-1"></i> Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-check me-1"></i> Crear Ticket
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </main>
                 </div>
@@ -313,6 +448,17 @@ $categorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 dropdownMenu.style.display = 'none';
             }
         });
+
+        // Mostrar nombre de archivo seleccionado
+        document.getElementById('attachment').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : 'Seleccionar archivo';
+            document.getElementById('file-name').textContent = fileName;
+        });
+
+        // Función para el modo oscuro (mantenida de la versión original)
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
     </script>
 </body>
 </html>

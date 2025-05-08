@@ -7,11 +7,14 @@ if (!isset($_SESSION['id'])) {
     exit();
 }
 
-// Consulta a la base de datos para obtener los tickets
-$sql = "SELECT * FROM tickets WHERE user_id = :user_id";
-$stmt = $pdo->prepare($sql);
-$stmt->execute(['user_id' => $_SESSION['id']]);
-$tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Obtener lista de técnicos
+$stmt = $pdo->prepare("SELECT id, username FROM users WHERE role = 'tech'");
+$stmt->execute();
+$tecnicos = $stmt->fetchAll();
+
+// Procesar mensaje de éxito/error si existe
+$mensaje = $_GET['mensaje'] ?? '';
+$tipoMensaje = $_GET['tipo_mensaje'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -26,14 +29,16 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="estilodashboard.css">
     <style>
         :root {
-            --color-primary: #3498db;  /* Azul en modo claro */
+            --color-primary: #3498db;
+            --color-primary-dark: #e67e22;
             --color-bg: #f8f9fa;
             --color-text: #343a40;
             --color-card: #ffffff;
             --color-border: #dee2e6;
+            --color-success: #28a745;
+            --color-danger: #dc3545;
         }
 
         body {
@@ -43,7 +48,14 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             transition: all 0.3s ease;
         }
 
-        /* Header mejorado */
+        body.dark-mode {
+            --color-primary: #ff8c42;
+            --color-bg: #121212;
+            --color-text: #f8f9fa;
+            --color-card: #1e1e1e;
+            --color-border: #444;
+        }
+
         .header {
             background: var(--color-card);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -61,77 +73,104 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             opacity: 0.8;
         }
 
-        /* Tabla de tickets */
-        .tickets-table {
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .tickets-table thead {
-            background-color: var(--color-primary);
-            color: white;
-        }
-
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .status-open {
-            background-color: #ffeeba;
-            color: #856404;
-        }
-
-        .status-resolved {
-            background-color: #c3e6cb;
-            color: #155724;
-        }
-
-        /* Botón nuevo ticket */
-        .btn-new-ticket {
-            background: var(--color-primary);
-            border: none;
-            padding: 10px 20px;
-            font-weight: 600;
-            transition: all 0.3s;
-            color: white;
-        }
-
-        .btn-new-ticket:hover {
-            background: var(--color-primary-dark);
-            transform: translateY(-2px);
-            color: white;
-        }
-
-        /* Panel */
-        .panel {
+        .contact-container {
             background-color: var(--color-card);
-            border: 1px solid var(--color-border);
             border-radius: 10px;
-            padding: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .contact-container {
+            background-color: #2c2c2c;
+        }
+
+        .contact-title {
+            color: var(--color-primary);
+            margin-bottom: 25px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
             margin-bottom: 20px;
         }
 
-        .panel-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 8px;
             color: var(--color-primary);
         }
 
-        .panel-container {
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: var(--color-card);
+            color: var(--color-text);
+        }
+
+        body.dark-mode .form-control {
+            background-color: #3c3c3c;
+            border-color: #555;
+        }
+
+        .form-control:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+            outline: none;
+        }
+
+        .form-actions {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
         }
 
-        .element {
-            margin-bottom: 20px;
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Navbar lateral */
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-send {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-send:hover {
+            background-color: var(--color-primary-dark);
+            transform: translateY(-2px);
+        }
+
         .sidebar {
             background-color: var(--color-card);
             border-radius: 10px;
@@ -145,6 +184,9 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 5px;
             margin-bottom: 5px;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .nav-link:hover, .nav-link.active {
@@ -152,19 +194,53 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: var(--color-primary);
         }
 
-        .nav-link i {
-            width: 20px;
-            text-align: center;
-            margin-right: 10px;
+        body.dark-mode .nav-link:hover, 
+        body.dark-mode .nav-link.active {
+            background-color: rgba(255, 140, 66, 0.1);
         }
 
-        /* Tabla */
-        .table {
-            color: var(--color-text);
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .table-hover tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid var(--color-success);
+            color: var(--color-success);
+        }
+
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        textarea.form-control {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+        }
+
+        body.dark-mode select.form-control {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f8f9fa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        }
+
+        .main-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
     </style>
 </head>
@@ -178,6 +254,9 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
                              alt="Logo" style="max-width: 150px;">
                     </div>
                     <div class="d-flex align-items-center gap-4">
+                        <button id="theme-button" class="btn btn-sm">
+                            <i class="fas fa-moon"></i> Modo Oscuro
+                        </button>
                         <div class="user-menu position-relative">
                             <span class="d-flex align-items-center gap-2">
                                 <i class="fas fa-user-circle"></i>
@@ -204,7 +283,7 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <nav class="sidebar">
                         <ul class="nav flex-column w-100">
                             <li class="nav-item">
-                                <a class="nav-link active d-flex align-items-center gap-2" href="dashboard.php">
+                                <a class="nav-link d-flex align-items-center gap-2" href="dashboard.php">
                                     <i class="fas fa-tachometer-alt"></i> Panel
                                 </a>
                             </li>
@@ -224,7 +303,7 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center gap-2" href="clienteTecnico.php">
+                                <a class="nav-link active d-flex align-items-center gap-2" href="clienteTecnico.php">
                                     <i class="fas fa-comments"></i> Comunicación
                                 </a>
                             </li>
@@ -234,50 +313,80 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <div class="col-md-9">
                     <main class="main-content">
-                        <h2 class="mb-4">Contacto</h2>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="main-title">
+                                <i class="fas fa-comments"></i>
+                                <span>Contactar con técnico</span>
+                            </h2>
+                        </div>
                         
-                        <!-- Contenedor de los paneles -->
-                        <div class="panel-container">
-                            <!-- Panel 2 -->
-                            <div class="panel">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h2 class="panel-title mb-0">Enviar mensaje</h2>
-                                </div>
-                                <div class="card shadow-sm">
-                                    <div class="card-body p-0">
-                                        <div class="table-responsive">
-                                            <form action="procesar_contacto.php" method="POST">
-                                                <div class="form-group">
-                                                    <label for="asunto">Asunto:</label>
-                                                    <input type="text" id="asunto" name="asunto" required>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="tecnico">Seleccionar Técnico:</label>
-                                                    <select id="tecnico" name="tecnico" required>
-                                                        <?php
-                                                        require 'database.php';
-                                                        $stmt = $pdo->prepare("SELECT id, username FROM users WHERE role = 'tech'");
-                                                        $stmt->execute();
-                                                        $tecnicos = $stmt->fetchAll();
-                                                        foreach ($tecnicos as $tecnico) {
-                                                            echo "<option value='" . htmlspecialchars($tecnico['id']) . "'>" . htmlspecialchars($tecnico['username']) . "</option>";
-                                                        }
-                                                        ?>
-                                                    </select>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="mensaje">Mensaje:</label>
-                                                    <textarea id="mensaje" name="mensaje" rows="5" required style="resize: none;"></textarea>
-                                                </div>
-                                                <div class="form-actions">
-                                                    <button type="button" class="cancel-button">Cancelar</button>
-                                                    <button type="submit" class="send-message-button">Enviar Mensaje</button>
-                                                </div>
-                                            </form>
+                        <?php if ($mensaje): ?>
+                            <div class="alert <?= $tipoMensaje === 'success' ? 'alert-success' : 'alert-danger' ?>">
+                                <i class="fas <?= $tipoMensaje === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle' ?>"></i>
+                                <?= htmlspecialchars($mensaje) ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="contact-container">
+                            <h3 class="contact-title">
+                                <i class="fas fa-paper-plane"></i>
+                                <span>Enviar mensaje</span>
+                            </h3>
+                            
+                            <form method="POST" action="procesar_contacto.php">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="asunto">
+                                                <i class="fas fa-heading"></i>
+                                                <span>Asunto:</span>
+                                            </label>
+                                            <input type="text" id="asunto" name="asunto" class="form-control" required>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="tecnico">
+                                                <i class="fas fa-user-tie"></i>
+                                                <span>Técnico:</span>
+                                            </label>
+                                            <select id="tecnico" name="tecnico" class="form-control" required>
+                                                <?php foreach ($tecnicos as $tecnico): ?>
+                                                    <option value="<?= htmlspecialchars($tecnico['id']) ?>">
+                                                        <?= htmlspecialchars($tecnico['username']) ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="mensaje">
+                                                <i class="fas fa-comment-dots"></i>
+                                                <span>Mensaje:</span>
+                                            </label>
+                                            <textarea id="mensaje" name="mensaje" class="form-control" required></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-cancel" onclick="window.location.href='dashboard.php'">
+                                        <i class="fas fa-times"></i>
+                                        <span>Cancelar</span>
+                                    </button>
+                                    <button type="submit" class="btn btn-send">
+                                        <i class="fas fa-paper-plane"></i>
+                                        <span>Enviar Mensaje</span>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </main>
                 </div>
@@ -288,7 +397,6 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Scripts personalizados -->
     <script>
         // Menú desplegable de usuario
         const userMenu = document.querySelector('.user-menu');
@@ -303,6 +411,47 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (!userMenu.contains(e.target)) {
                 dropdownMenu.style.display = 'none';
             }
+        });
+
+        // Tema oscuro/claro
+        const themeButton = document.getElementById('theme-button');
+        const body = document.body;
+
+        // Verificar preferencia guardada
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            themeButton.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+        }
+
+        themeButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            
+            if (isDarkMode) {
+                themeButton.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                themeButton.innerHTML = '<i class="fas fa-moon"></i> Modo Oscuro';
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        });
+
+        // Validación del formulario
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const mensaje = document.getElementById('mensaje').value.trim();
+            
+            if (mensaje.length < 10) {
+                e.preventDefault();
+                alert('El mensaje debe tener al menos 10 caracteres.');
+                return false;
+            }
+            
+            if (!confirm('¿Estás seguro de que deseas enviar este mensaje?')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            return true;
         });
     </script>
 </body>

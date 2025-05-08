@@ -11,7 +11,7 @@ if (isset($_SESSION['user_id'])) {
             header('Location: index_tech.php');
             break;
         default:
-            header('Location: index_usuario.php');
+            header('Location: login.php');
     }
     exit();
 }

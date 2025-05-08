@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mensaje = "Perfil actualizado correctamente.";
                 $user['username'] = $nuevoUsername;
                 $user['email'] = $nuevoEmail;
+                $_SESSION['username'] = $nuevoUsername; // Actualizar sesión
             } else {
                 $mensaje = "Error al actualizar el perfil.";
             }
@@ -67,11 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --color-primary: #3498db;  /* Azul */
+            --color-primary: #3498db;  /* Azul en modo claro */
+            --color-primary-dark: #e67e22;
             --color-bg: #f8f9fa;
             --color-text: #343a40;
             --color-card: #ffffff;
             --color-border: #dee2e6;
+            --color-success: #28a745;
+            --color-danger: #dc3545;
         }
 
         body {
@@ -79,6 +83,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-color: var(--color-bg);
             color: var(--color-text);
             transition: all 0.3s ease;
+        }
+
+        /* Modo oscuro */
+        body.dark-mode {
+            --color-primary: #ff8c42;  /* Naranja en modo oscuro */
+            --color-bg: #121212;
+            --color-text: #f8f9fa;
+            --color-card: #1e1e1e;
+            --color-border: #444;
         }
 
         /* Header mejorado */
@@ -99,94 +112,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             opacity: 0.8;
         }
 
-        /* Cards de resumen */
-        .summary-card {
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-            border-left: 4px solid var(--color-primary);
+        /* Formulario de perfil */
+        .profile-container {
             background-color: var(--color-card);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
-        .summary-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        body.dark-mode .profile-container {
+            background-color: #2c2c2c;
         }
 
-        .card-icon {
-            font-size: 1.8rem;
+        .profile-title {
+            color: var(--color-primary);
+            margin-bottom: 25px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
             color: var(--color-primary);
         }
 
-        /* Tabla de tickets */
-        .tickets-table {
-            border-radius: 10px;
-            overflow: hidden;
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: var(--color-card);
+            color: var(--color-text);
         }
 
-        .tickets-table thead {
-            background-color: var(--color-primary);
-            color: white;
+        body.dark-mode .form-control {
+            background-color: #3c3c3c;
+            border-color: #555;
         }
 
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
+        .form-control:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+            outline: none;
         }
 
-        .status-open {
-            background-color: #ffeeba;
-            color: #856404;
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
         }
 
-        .status-resolved {
-            background-color: #c3e6cb;
-            color: #155724;
-        }
-
-        /* Botón nuevo ticket */
-        .btn-new-ticket {
-            background: var(--color-primary);
-            border: none;
+        .btn {
             padding: 10px 20px;
+            border-radius: 6px;
             font-weight: 600;
             transition: all 0.3s;
-            color: white;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .btn-new-ticket:hover {
-            background: var(--color-primary);
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5a6268;
             transform: translateY(-2px);
+        }
+
+        .btn-save {
+            background-color: var(--color-primary);
             color: white;
+            border: none;
         }
 
-        /* Panel */
-        .panel {
-            background-color: var(--color-card);
-            border: 1px solid var(--color-border);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .panel-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: var(--color-primary);
-        }
-
-        .panel-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .element {
-            margin-bottom: 20px;
+        .btn-save:hover {
+            background-color: var(--color-primary-dark);
+            transform: translateY(-2px);
         }
 
         /* Navbar lateral */
@@ -216,13 +233,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-right: 10px;
         }
 
-        /* Tabla */
-        .table {
-            color: var(--color-text);
+        body.dark-mode .nav-link:hover, 
+        body.dark-mode .nav-link.active {
+            background-color: rgba(255, 140, 66, 0.1);
         }
 
-        .table-hover tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
+        /* Mensajes de alerta */
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid var(--color-success);
+            color: var(--color-success);
+        }
+
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        /* Indicador de fortaleza de contraseña */
+        .password-strength {
+            height: 5px;
+            background-color: #e9ecef;
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .strength-meter {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s, background-color 0.3s;
+        }
+
+        .strength-weak {
+            background-color: #dc3545;
+            width: 30%;
+        }
+
+        .strength-medium {
+            background-color: #fd7e14;
+            width: 60%;
+        }
+
+        .strength-strong {
+            background-color: #28a745;
+            width: 100%;
+        }
+
+        .strength-text {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: var(--color-text);
         }
     </style>
 </head>
@@ -236,6 +307,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                              alt="Logo" style="max-width: 150px;">
                     </div>
                     <div class="d-flex align-items-center gap-4">
+                        <button id="theme-button" class="btn btn-sm">
+                            <i class="fas fa-moon"></i> Modo Oscuro
+                        </button>
                         <div class="user-menu position-relative">
                             <span class="d-flex align-items-center gap-2">
                                 <i class="fas fa-user-circle"></i>
@@ -262,7 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <nav class="sidebar">
                         <ul class="nav flex-column w-100">
                             <li class="nav-item">
-                                <a class="nav-link active d-flex align-items-center gap-2" href="dashboard.php">
+                                <a class="nav-link d-flex align-items-center gap-2" href="dashboard.php">
                                     <i class="fas fa-tachometer-alt"></i> Panel
                                 </a>
                             </li>
@@ -277,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center gap-2" href="gestionPerfilUsuario.php">
+                                <a class="nav-link active d-flex align-items-center gap-2" href="gestionPerfilUsuario.php">
                                     <i class="fas fa-user-cog"></i> Editar Perfil
                                 </a>
                             </li>
@@ -292,33 +366,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="col-md-9">
                     <main class="main-content">
-                        <h2 class="mb-4">Editar Perfil</h2>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="fas fa-user-cog me-2"></i>Editar Perfil</h2>
+                        </div>
                         
-                        <form method="POST" action="gestionPerfilUsuario.php" class="profile-form" onsubmit="return validarFormulario()">
-                            <div class="form-group">
-                                <label for="username">Nombre de Usuario:</label>
-                                <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required>
+                        <?php if (!empty($mensaje)): ?>
+                            <div class="alert <?= strpos($mensaje, 'correctamente') !== false ? 'alert-success' : 'alert-danger' ?>">
+                                <i class="fas <?= strpos($mensaje, 'correctamente') !== false ? 'fa-check-circle' : 'fa-exclamation-circle' ?>"></i>
+                                <?= htmlspecialchars($mensaje) ?>
                             </div>
+                        <?php endif; ?>
+
+                        <div class="profile-container">
+                            <h3 class="profile-title"><i class="fas fa-user-edit me-2"></i>Información del Perfil</h3>
                             
-                            <div class="form-group">
-                                <label for="email">Correo Electrónico:</label>
-                                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="password">Nueva Contraseña (opcional):</label>
-                                <input type="password" id="password" name="password" placeholder="Deja en blanco si no deseas cambiarla">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="confirm_password">Confirmar Contraseña:</label>
-                                <input type="password" id="confirm_password" name="confirm_password" placeholder="Repite la nueva contraseña">
-                            </div>
-                            
-                            <div class="form-group">
-                                <button type="submit">Actualizar Perfil</button>
-                            </div>
-                        </form>
+                            <form method="POST" action="gestionPerfilUsuario.php">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="username"><i class="fas fa-user me-2"></i>Nombre de Usuario:</label>
+                                            <input type="text" id="username" name="username" class="form-control" 
+                                                   value="<?= htmlspecialchars($user['username']) ?>" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="email"><i class="fas fa-envelope me-2"></i>Correo Electrónico:</label>
+                                            <input type="email" id="email" name="email" class="form-control" 
+                                                   value="<?= htmlspecialchars($user['email']) ?>" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="password"><i class="fas fa-lock me-2"></i>Nueva Contraseña (opcional):</label>
+                                            <input type="password" id="password" name="password" class="form-control" 
+                                                   placeholder="Deja en blanco si no deseas cambiarla">
+                                            <div class="password-strength">
+                                                <div class="strength-meter" id="strength-meter"></div>
+                                            </div>
+                                            <div class="strength-text" id="strength-text"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="confirm_password"><i class="fas fa-lock me-2"></i>Confirmar Contraseña:</label>
+                                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" 
+                                                   placeholder="Repite la nueva contraseña">
+                                            <div id="password-match" class="strength-text"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-cancel" onclick="window.location.href='dashboard.php'">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-save">
+                                        <i class="fas fa-save"></i> Guardar Cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </main>
                 </div>
             </div>
@@ -344,6 +455,112 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 dropdownMenu.style.display = 'none';
             }
         });
+
+        // Tema oscuro/claro
+        const themeButton = document.getElementById('theme-button');
+        const body = document.body;
+
+        // Verificar preferencia guardada
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            themeButton.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+        }
+
+        themeButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            
+            if (isDarkMode) {
+                themeButton.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                themeButton.innerHTML = '<i class="fas fa-moon"></i> Modo Oscuro';
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        });
+
+        // Validación de contraseña
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+        const strengthMeter = document.getElementById('strength-meter');
+        const strengthText = document.getElementById('strength-text');
+        const passwordMatch = document.getElementById('password-match');
+
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            
+            // Verificar longitud
+            if (password.length >= 8) strength += 1;
+            if (password.length >= 12) strength += 1;
+            
+            // Verificar caracteres especiales
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 1;
+            
+            // Verificar números
+            if (/\d/.test(password)) strength += 1;
+            
+            // Verificar mayúsculas y minúsculas
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 1;
+            
+            // Actualizar indicador visual
+            switch(strength) {
+                case 0:
+                case 1:
+                    strengthMeter.className = 'strength-meter strength-weak';
+                    strengthText.textContent = 'Débil';
+                    strengthText.style.color = '#dc3545';
+                    break;
+                case 2:
+                case 3:
+                    strengthMeter.className = 'strength-meter strength-medium';
+                    strengthText.textContent = 'Moderada';
+                    strengthText.style.color = '#fd7e14';
+                    break;
+                case 4:
+                case 5:
+                    strengthMeter.className = 'strength-meter strength-strong';
+                    strengthText.textContent = 'Fuerte';
+                    strengthText.style.color = '#28a745';
+                    break;
+            }
+            
+            // Verificar coincidencia si hay confirmación
+            if (confirmPasswordInput.value) {
+                checkPasswordMatch();
+            }
+        });
+
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        function checkPasswordMatch() {
+            if (passwordInput.value && confirmPasswordInput.value) {
+                if (passwordInput.value === confirmPasswordInput.value) {
+                    passwordMatch.textContent = 'Las contraseñas coinciden';
+                    passwordMatch.style.color = '#28a745';
+                } else {
+                    passwordMatch.textContent = 'Las contraseñas no coinciden';
+                    passwordMatch.style.color = '#dc3545';
+                }
+            } else {
+                passwordMatch.textContent = '';
+            }
+        }
+
+        // Validación del formulario
+        function validarFormulario() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (password || confirmPassword) {
+                if (password !== confirmPassword) {
+                    alert('Las contraseñas no coinciden.');
+                    return false;
+                }
+            }
+            
+            return confirm('¿Estás seguro de que deseas guardar los cambios?');
+        }
     </script>
 </body>
 </html>
